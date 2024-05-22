@@ -1,9 +1,11 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   index,
+  integer,
+  pgEnum,
   pgTableCreator,
   serial,
   timestamp,
@@ -16,17 +18,30 @@ import {
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator(name => `t3-learn-api_${name}`);
+export const createTable = pgTableCreator(
+  name => `t3-learn-api-player_${name}`
+);
 
-export const users = createTable(
-  'user',
+export const positionEnum = pgEnum('position', [
+  'forwarder',
+  'midfielder',
+  'defender'
+]);
+
+export const skillEnum = pgEnum('skill', [
+  'strength',
+  'defense',
+  'stamina',
+  'speed',
+  'attack'
+]);
+
+export const players = createTable(
+  'player',
   {
     id: serial('id').primaryKey(),
     name: varchar('name', { length: 256 }).notNull(),
-    url: varchar('url', { length: 1024 }).notNull(),
-
-    userId: varchar('user_id', { length: 256 }).notNull(),
-
+    position: positionEnum('position').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -36,3 +51,20 @@ export const users = createTable(
     nameIndex: index('name_idx').on(example.name)
   })
 );
+
+export const skills = createTable('skill', {
+  id: serial('id').primaryKey(),
+  skill: skillEnum('skill').notNull(),
+  value: integer('value').notNull(),
+  playerId: integer('player_id')
+    .notNull()
+    .references(() => players.id)
+});
+
+export const playersRelations = relations(players, ({ many }) => ({
+  skills: many(skills)
+}));
+
+export const skillsRelations = relations(skills, ({ one }) => ({
+  player: one(players, { fields: [skills.playerId], references: [players.id] })
+}));

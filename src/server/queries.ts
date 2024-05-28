@@ -1,8 +1,9 @@
 'server-only';
 
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from './db';
 import { players, skills } from './db/schema';
+import { NextResponse } from 'next/server';
 
 interface Player {
   name: string;
@@ -13,6 +14,7 @@ interface Player {
 interface Skill {
   skill: 'strength' | 'defense' | 'stamina' | 'speed' | 'attack';
   value: number;
+  playerId: number;
 }
 
 export async function getPlayers() {
@@ -52,20 +54,58 @@ export async function addPlayer(player: Player) {
   }
 }
 
-export async function addSkill(request: Skill, playerId: number) {
-  const { skill, value } = request;
+export async function addSkill(request: Skill) {
+  const { skill, value, playerId } = request;
   try {
-    const newSkill = await db
-      .insert(skills)
-      .values({ skill, value, playerId })
-      .returning();
+    const existingSkill = await db.query.skills.findFirst({
+      where: and(eq(skills.skill, skill), eq(skills.playerId, playerId))
+    });
 
-    return newSkill;
+    if (existingSkill) {
+      const updatedSkill = await updateSkill(request);
+      return updatedSkill;
+    } else {
+      const newSkill = await db
+        .insert(skills)
+        .values({ skill, value, playerId })
+        .returning();
+
+      return {
+        message: 'Skill added',
+        skill: newSkill
+      };
+    }
   } catch (error) {
     console.error(error);
     return {
       success: false,
-      message: 'An error occured while adding the skill'
+      message: 'An error occured while adding skill'
+    };
+  }
+}
+
+export async function updateSkill(request: Skill) {
+  try {
+    const updatedSkill = await db
+      .update(skills)
+      .set({ value: request.value })
+      .where(
+        and(
+          eq(skills.skill, request.skill),
+          eq(skills.playerId, request.playerId)
+        )
+      )
+      .returning();
+
+    return {
+      message: 'Skill updated',
+      skill: updatedSkill
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: 'An error occured while updating skill'
     };
   }
 }

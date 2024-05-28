@@ -11,6 +11,7 @@ import {
   timestamp,
   varchar
 } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -52,6 +53,8 @@ export const players = createTable(
   })
 );
 
+export const insertPlayerSchema = createInsertSchema(players);
+
 export const skills = createTable('skill', {
   id: serial('id').primaryKey(),
   skill: skillEnum('skill').notNull(),
@@ -60,6 +63,8 @@ export const skills = createTable('skill', {
     .notNull()
     .references(() => players.id)
 });
+
+export const insertSkillSchema = createInsertSchema(skills);
 
 export const playersRelations = relations(players, ({ many }) => ({
   skills: many(skills)

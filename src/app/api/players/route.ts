@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { insertPlayerSchema } from '~/server/db/schema';
 import { addPlayer, getPlayers } from '~/server/queries';
-
-const playerSchema = z.object({
-  name: z.string(),
-  position: z.enum(['forwarder', 'midfielder', 'defender'])
-});
 
 export async function GET() {
   const res = await getPlayers();
@@ -15,7 +11,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
-    const parsedBody = playerSchema.parse(body);
+    const parsedBody = insertPlayerSchema.parse(body);
     const newPlayer = await addPlayer(parsedBody);
 
     return NextResponse.json({
@@ -24,7 +20,6 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      console.log(err.issues);
       return NextResponse.json(err.issues);
     }
   }

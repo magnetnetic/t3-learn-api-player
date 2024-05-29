@@ -10,7 +10,7 @@ export async function getSkill(
   skillDef: 'strength' | 'defense' | 'stamina' | 'speed' | 'attack'
 ) {
   const skill = await db.query.skills.findFirst({
-    where: and(eq(skills.skill, skillDef))
+    where: and(eq(skills.skill, skillDef), eq(skills.playerId, playerId))
   });
 
   return skill;

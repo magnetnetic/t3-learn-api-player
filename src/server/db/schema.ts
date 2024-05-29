@@ -61,7 +61,7 @@ export const skills = createTable('skill', {
   value: integer('value').notNull(),
   playerId: integer('player_id')
     .notNull()
-    .references(() => players.id)
+    .references(() => players.id, { onDelete: 'cascade' })
 });
 
 export const insertSkillSchema = createInsertSchema(skills);
